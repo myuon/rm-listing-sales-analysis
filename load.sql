@@ -33,28 +33,55 @@ select
     substr(try_cast(month as varchar), 0, 5) as year,
     any_value(name) as name,
     any_value(manual_id) as manual_id,
-    sum(total) / sum(try_cast(total_days_in_the_month as integer)) as total_adr,
-    sum(minpaku_total) / sum(try_cast(minpaku_days_in_the_month as integer)) as minpaku_adr,
-    sum(monthly_total) / sum(try_cast(monthly_days_in_the_month as integer)) as monthly_adr,
     sum(total) as total,
     sum(minpaku_total) as minpaku_total,
     sum(monthly_total) as monthly_total,
+    sum(try_cast(total_days_in_the_month as integer)) as total_days,
+    sum(try_cast(minpaku_days_in_the_month as integer)) as minpaku_total_days,
+    sum(try_cast(monthly_days_in_the_month as integer)) as monthly_total_days,
 from read_json('./data/sales.json')
-group by listing_id, substr(try_cast(month as varchar), 0, 5);
+group by listing_id, substr(try_cast(month as varchar), 0, 5)
+order by listing_id, substr(try_cast(month as varchar), 0, 5);
+
+copy yearly_sales to './data/yearly_sales.json';
 
 copy (
     select
-        listings.*,
-        yearly_sales.minpaku_total,
-        yearly_sales.monthly_total,
-        yearly_sales.total,
-        yearly_sales.minpaku_adr,
-        yearly_sales.monthly_adr,
-        yearly_sales.total_adr,
+        listings.manual_id,
+        ANY_VALUE(listings.listing_name) as listing_name,
+        ANY_VALUE(listings.room_type_id) as room_type_id,
+        ANY_VALUE(listings.owner_name) as owner_name,
+        ANY_VALUE(listings.stay_operation_type) as stay_operation_type,
+        ANY_VALUE(listings.prefecture_name) as prefecture_name,
+        ANY_VALUE(listings.city_name) as city_name,
+        ANY_VALUE(listings.floor_plan) as floor_plan,
+        ANY_VALUE(listings.sqm) as sqm,
+        ANY_VALUE(listings.number_of_capacity) as number_of_capacity,
+        ANY_VALUE(listings.has_elevator) as has_elevator,
+        ANY_VALUE(listings.has_auto_lock) as has_auto_lock,
+        ANY_VALUE(listings.first_line) as first_line,
+        ANY_VALUE(listings.first_station) as first_station,
+        ANY_VALUE(listings.first_walk_min) as first_walk_min,
+        ANY_VALUE(listings.location_floor) as location_floor,
+        ANY_VALUE(listings.built_year) as built_year,
+        ANY_VALUE(listings.tag) as tag,
+        ANY_VALUE(listings.number_of_s_beds) as number_of_s_beds,
+        ANY_VALUE(listings.number_of_sd_beds) as number_of_sd_beds,
+        ANY_VALUE(listings.number_of_d_beds) as number_of_d_beds,
+        ANY_VALUE(listings.number_of_q_beds) as number_of_q_beds,
+        ANY_VALUE(listings.number_of_k_beds) as number_of_k_beds,
+        ANY_VALUE(listings.number_of_futons) as number_of_futons,
+        ANY_VALUE(listings.number_of_sofa_beds) as number_of_sofa_beds,
+        sum(yearly_sales.total) / sum(yearly_sales.total_days) as total_adr,
+        sum(yearly_sales.minpaku_total) / sum(yearly_sales.minpaku_total_days) as minpaku_adr,
+        sum(yearly_sales.monthly_total) / sum(yearly_sales.monthly_total_days) as monthly_adr,
     from listings
     join yearly_sales
         on listings.manual_id = yearly_sales.manual_id
-    where yearly_sales.year = '2024'
-    and yearly_sales.minpaku_adr != 'NaN' and yearly_sales.minpaku_adr != 'Infinity'
-    and yearly_sales.monthly_adr != 'NaN' and yearly_sales.monthly_adr != 'Infinity'
+    where yearly_sales.total_days > 0
+    and yearly_sales.minpaku_total_days > 0
+    and yearly_sales.monthly_total_days > 0
+    and yearly_sales.total > 0
+    and yearly_sales.year IN ('2023', '2024', '2025')
+    group by listings.manual_id
 ) to './data/listings_2024_sales.json';
