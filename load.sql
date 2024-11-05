@@ -39,7 +39,8 @@ select
     sum(total) as total,
     sum(minpaku_total) as minpaku_total,
     sum(monthly_total) as monthly_total,
-from read_json('./data/sales.json') group by listing_id, substr(try_cast(month as varchar), 0, 5);
+from read_json('./data/sales.json')
+group by listing_id, substr(try_cast(month as varchar), 0, 5);
 
 copy (
     select
@@ -54,4 +55,6 @@ copy (
     join yearly_sales
         on listings.manual_id = yearly_sales.manual_id
     where yearly_sales.year = '2024'
+    and yearly_sales.minpaku_adr != 'NaN' and yearly_sales.minpaku_adr != 'Infinity'
+    and yearly_sales.monthly_adr != 'NaN' and yearly_sales.monthly_adr != 'Infinity'
 ) to './data/listings_2024_sales.json';
