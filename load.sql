@@ -83,5 +83,7 @@ copy (
     and yearly_sales.monthly_total_days > 0
     and yearly_sales.total > 0
     and yearly_sales.year IN ('2023', '2024', '2025')
+    and yearly_sales.minpaku_total > 0
+    and yearly_sales.monthly_total > 0
     group by listings.manual_id
 ) to './data/listings_2024_sales.json';
