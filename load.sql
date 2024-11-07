@@ -87,3 +87,41 @@ copy (
     and yearly_sales.monthly_total > 0
     group by listings.manual_id
 ) to './data/listings_2024_sales.json';
+
+create table reviews as
+select * from read_json('./data/reviews.json');
+
+copy (
+    select
+        listings.manual_id,
+        ANY_VALUE(listings.listing_name) as listing_name,
+        ANY_VALUE(listings.room_type_id) as room_type_id,
+        ANY_VALUE(listings.owner_name) as owner_name,
+        ANY_VALUE(listings.stay_operation_type) as stay_operation_type,
+        ANY_VALUE(listings.prefecture_name) as prefecture_name,
+        ANY_VALUE(listings.city_name) as city_name,
+        ANY_VALUE(listings.floor_plan) as floor_plan,
+        ANY_VALUE(listings.sqm) as sqm,
+        ANY_VALUE(listings.number_of_capacity) as number_of_capacity,
+        ANY_VALUE(listings.has_elevator) as has_elevator,
+        ANY_VALUE(listings.has_auto_lock) as has_auto_lock,
+        ANY_VALUE(listings.first_line) as first_line,
+        ANY_VALUE(listings.first_station) as first_station,
+        ANY_VALUE(listings.first_walk_min) as first_walk_min,
+        ANY_VALUE(listings.location_floor) as location_floor,
+        ANY_VALUE(listings.built_year) as built_year,
+        ANY_VALUE(listings.tag) as tag,
+        ANY_VALUE(listings.number_of_s_beds) as number_of_s_beds,
+        ANY_VALUE(listings.number_of_sd_beds) as number_of_sd_beds,
+        ANY_VALUE(listings.number_of_d_beds) as number_of_d_beds,
+        ANY_VALUE(listings.number_of_q_beds) as number_of_q_beds,
+        ANY_VALUE(listings.number_of_k_beds) as number_of_k_beds,
+        ANY_VALUE(listings.number_of_futons) as number_of_futons,
+        ANY_VALUE(listings.number_of_sofa_beds) as number_of_sofa_beds,
+        avg(try_cast(reviews.overall_rating as integer)) as overall_rating,
+    from listings
+    join reviews
+        on listings.manual_id = reviews.manual_id
+    where try_cast(reviews.check_in as varchar) >= '2023' and try_cast(reviews.check_in as varchar) <= '2025'
+    group by listings.manual_id
+) to './data/listings_2024_reviews.json';
